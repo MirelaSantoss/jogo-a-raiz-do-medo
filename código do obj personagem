@@ -1,0 +1,116 @@
+// EVENTO CRIAR: 
+if (!variable_global_exists("folha_aberta")) {
+    global.folha_aberta = false;
+}
+
+if (!variable_global_exists("folha_aberta2")) {
+    global.folha_aberta2 = false;
+}
+
+if (!variable_global_exists("folha_audio_tocada")) {
+    global.folha_audio_tocada = false;
+}
+direita = 0;
+esquerda = 0;
+
+cima = 0;
+baixo = 0;
+gravidade = 0.08;
+
+direc = 4;
+
+hveloc = 0; //velocidade horizontal
+vveloc = 0; //velocidade vertical
+velocidade = 1.2
+
+vidas = 3;
+
+
+//EVENTO ETAPA:  
+if (global.pause) exit;
+
+var direita  = keyboard_check(vk_right);
+var esquerda = keyboard_check(vk_left);
+var cima     = keyboard_check(vk_up);
+var baixo    = keyboard_check(vk_down);
+
+var hveloc = 0;
+var vveloc = 0;
+
+if (direita) { hveloc = velocidade; direc = 1; sprite_index = personagem_direita; }
+else if (esquerda) { hveloc = -velocidade; direc = 2; sprite_index = personagem_esquerda; }
+else if (cima) { vveloc = -velocidade; direc = 3; sprite_index = personagem_atras; }
+else if (baixo) { vveloc = velocidade; direc = 4; sprite_index = personagem_frente; }
+else {
+    if (direc == 1) sprite_index = parado_direita;
+    else if (direc == 2) sprite_index = parado_esquerda;
+    else if (direc == 3) sprite_index = parado_atras;
+    else if (direc == 4) sprite_index = parado_frente;
+}
+
+//movimento do personagem
+var xnovo = x + hveloc;
+var ynovo = y + vveloc;
+
+if (!place_meeting(xnovo, y, Obj_parede)) x = xnovo;
+else { while(!place_meeting(x + sign(hveloc), y, Obj_parede)) x += sign(hveloc); hveloc = 0; }
+
+if (!place_meeting(x, ynovo, Obj_parede)) y = ynovo;
+else { while(!place_meeting(x, y + sign(vveloc), Obj_parede)) y += sign(vveloc); vveloc = 0; }
+
+
+var movendo = (hveloc != 0) || (vveloc != 0);
+if (movendo) {
+    if (!audio_is_playing(audio_passos)) audio_play_sound(audio_passos, 1, true);
+} else {
+    audio_stop_sound(audio_passos);
+}
+
+//para abrir primeira folha
+if (keyboard_check_pressed(ord("E")) && !global.folha_aberta) {
+    var folha = instance_nearest(x, y, obj_folha);
+    if (instance_exists(folha)) {
+        var dist = point_distance(x, y, folha.x, folha.y);
+        if (dist < 80 && !instance_exists(obj_folha_aberta)) {
+            instance_create_layer(display_get_gui_width()/2,
+                                  display_get_gui_height()/2,
+                                  "GUI",
+                                  obj_folha_aberta);
+            global.folha_aberta = true;
+        }
+    }
+}
+
+// E para ler folha
+if (instance_exists(obj_folha)) {
+    var folha = instance_nearest(x, y, obj_folha);
+    var dist = point_distance(x, y, folha.x, folha.y);
+    mensagem_visivel = (dist < 80);
+} else mensagem_visivel = false;
+
+
+//FOLHA2
+
+if (keyboard_check_pressed(ord("W")) && !global.folha_aberta2) {
+    var folha = instance_nearest(x, y, obj_folha2);
+    if (instance_exists(folha)) {
+        var dist = point_distance(x, y, folha.x, folha.y);
+        if (dist < 80 && !instance_exists(obj_folha_aberta2)) {
+            instance_create_layer(display_get_gui_width()/2,
+                                  display_get_gui_height()/2,
+                                  "GUI",
+                                  obj_folha_aberta2);
+            global.folha_aberta2 = true;
+        }
+    }
+}
+
+//tecla W
+if (instance_exists(obj_folha2)) {
+    var folha = instance_nearest(x, y, obj_folha2);
+    var dist = point_distance(x, y, folha.x, folha.y);
+    mensagem_visivel = (dist < 80);
+} else mensagem_visivel = false;
+
+//EVENTO DESENHAR GUI:
+draw_text(10, 10, "x: " + string(x) + " y: " + string(y));
