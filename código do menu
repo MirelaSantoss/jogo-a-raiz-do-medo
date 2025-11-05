@@ -1,0 +1,255 @@
+// EVENTO CRIAR: 
+audio_play_sound(audio_principal, 1, true);
+
+//MENU PRINCIPAL
+tam_menu = 4;
+menu_inicial = ["Jogar","Opcoes","Criadores","Sair"];
+esc = array_create(tam_menu, 1);
+hover_prog = array_create(tam_menu, 0);
+
+//opções do menu
+tam_menu_opcoes = 4;
+menu_opcoes = ["Volume","Controles","Idioma","Sair"];
+esc_opcoes = array_create(tam_menu_opcoes, 1);
+hover_prog_opcoes = array_create(tam_menu_opcoes, 0);
+
+
+controles = [
+    ["↑","CIMA"], ["↓","BAIXO"], ["←","ESQUERDA"], ["→","DIREITA"],
+    ["W","ABRIR CARTA"], ["E","ABRIR CARTA"]
+];
+tam_controles = array_length(controles);
+esc_controles = array_create(tam_controles, 1);
+hover_prog_controles = array_create(tam_controles, 0);
+
+
+menu_atual = "principal";
+configurando_controle = -1;
+
+//teclas
+global.teclas_controles = [
+    vk_up, vk_down, vk_left, vk_right,
+    ord("W"), ord("A"), ord("S"), ord("D"),
+    ord("E"), ord("R"), vk_shift, vk_space 
+];
+
+//idioma
+global.idiomas = ["PT-BR"];
+
+
+//EVENTO ETAPA:
+if(configurando_controle != -1){
+    var key_pressed = -1;
+
+    for(var k = ord("A"); k <= ord("Z"); k++){
+        if(keyboard_check_pressed(k)){
+            key_pressed = k;
+            break;
+        }
+    }
+
+    if(key_pressed == -1){
+        for(var k = ord("0"); k <= ord("9"); k++){
+            if(keyboard_check_pressed(k)){
+                key_pressed = k;
+                break;
+            }
+        }
+    }
+
+    if(key_pressed == -1){
+        if(keyboard_check_pressed(vk_up)) key_pressed = vk_up;
+        else if(keyboard_check_pressed(vk_down)) key_pressed = vk_down;
+        else if(keyboard_check_pressed(vk_left)) key_pressed = vk_left;
+        else if(keyboard_check_pressed(vk_right)) key_pressed = vk_right;
+        else if(keyboard_check_pressed(vk_space)) key_pressed = vk_space;
+        else if(keyboard_check_pressed(vk_shift)) key_pressed = vk_shift;
+    }
+
+    if(key_pressed != -1){
+        global.teclas_controles[configurando_controle] = key_pressed;
+        configurando_controle = -1;
+    }
+}
+
+if(keyboard_check_pressed(vk_escape)){
+    configurando_controle = -1;
+}
+
+//EVENTO DESENHAR GUI:
+var _mx = device_mouse_x_to_gui(0);
+var _my = device_mouse_y_to_gui(0);
+
+draw_set_font(fonte_jogo);
+draw_set_halign(fa_center);
+draw_set_valign(fa_middle);
+
+var _wgui = display_get_gui_width();
+var _hgui = display_get_gui_height();
+var _hstr = string_height("A");
+
+//função auxiliar
+function key_to_string(_key) {
+    switch(_key){
+        case vk_up: return "↑";
+        case vk_down: return "↓";
+        case vk_left: return "←";
+        case vk_right: return "→";
+        case vk_shift: return "Shift";
+        case vk_space: return "Espaço";
+        default:
+            if (_key >= ord("A") && _key <= ord("Z")) return string(chr(_key));
+            if (_key >= ord("0") && _key <= ord("9")) return string(chr(_key));
+            return "KEY" + string(_key);
+    }
+}
+
+if(menu_atual == "principal"){
+    
+    // variavel de deslocamento vertical
+    var y_offset = 100; 
+    
+    var menu_total_height = tam_menu*(_hstr+10)-10;
+    
+
+    var start_y = (_hgui/2 - menu_total_height/2) + y_offset;
+
+    for(var i=0;i<tam_menu;i++){
+        var y_pos = start_y + i*(_hstr+10);
+        var hover = point_in_rectangle(_mx,_my,_wgui/2 - string_width(menu_inicial[i])/2 -10, y_pos-_hstr/2, _wgui/2 + string_width(menu_inicial[i])/2 +10, y_pos+_hstr/2);
+        esc[i] = lerp(esc[i], hover ? 1.4 : 1, 0.15);
+        hover_prog[i] = clamp(hover_prog[i] + (hover?0.1:-0.1), 0, 1);
+
+        if(hover && mouse_check_button_pressed(mb_left)){
+            switch(i){
+                case 0:
+                    room_goto(intro);
+                    break;
+                case 1:
+                    menu_atual = "opcoes";
+                    break;
+                case 2:
+                    show_message("Créditos");
+                    break;
+                case 3:
+                    game_end();
+                    break;
+            }
+        }
+
+        draw_set_color(merge_color(c_white,c_red,hover_prog[i]));
+
+        draw_text_transformed(
+            _wgui/2,
+            y_pos,
+            menu_inicial[i],
+            esc[i],
+            esc[i],
+            0
+        );
+    }
+}
+
+//opcoes do menu
+else if(menu_atual == "opcoes"){
+    var total_height = tam_menu_opcoes*(_hstr+10)-10;
+    var start_y = _hgui/2 - total_height/2;
+
+    for(var i=0;i<tam_menu_opcoes;i++){
+        var y_pos = start_y + i*(_hstr+10);
+        var hover = point_in_rectangle(_mx,_my,_wgui/2 - string_width(menu_opcoes[i])/2 -10, y_pos-_hstr/2, _wgui/2 + string_width(menu_opcoes[i])/2 +10, y_pos+_hstr/2);
+        esc_opcoes[i] = lerp(esc_opcoes[i], hover ? 1.4 : 1, 0.15);
+        hover_prog_opcoes[i] = clamp(hover_prog_opcoes[i] + (hover?0.1:-0.1),0,1);
+
+        if(hover && mouse_check_button_pressed(mb_left)){
+            switch(i){
+                case 0: show_message("Configurar volume"); break;
+                case 1: menu_atual = "controles"; break;
+                case 2: menu_atual = "idioma"; break;
+                case 3: menu_atual = "principal"; break;
+            }
+        }
+
+        draw_set_color(merge_color(c_white,c_red,hover_prog_opcoes[i]));
+
+        if (i == 2) {
+            draw_text_transformed(
+                _wgui/2,
+                y_pos,
+                "IDIOMA",
+                esc_opcoes[i],
+                esc_opcoes[i],
+                0
+            );
+        } else {
+            draw_text_transformed(
+                _wgui/2,
+                y_pos,
+                menu_opcoes[i],
+                esc_opcoes[i],
+                esc_opcoes[i],
+                0
+            );
+        }
+    }
+}
+
+//controles do menu
+else if(menu_atual == "controles"){
+    var spacing = 50;
+    var start_y = _hgui/2 - (tam_controles*spacing)/2;
+    var col_left = _wgui/2 - 150;
+    var col_right = _wgui/2 + 150;
+
+    for(var i=0;i<tam_controles;i++){
+        var y_pos = start_y + i*spacing;
+        var hover = point_in_rectangle(_mx,_my,col_left-50, y_pos-_hstr/2, col_right+50, y_pos+_hstr/2);
+        esc_controles[i] = lerp(esc_controles[i], hover ? 1.3 : 1, 0.15);
+        hover_prog_controles[i] = clamp(hover_prog_controles[i] + (hover?0.1:-0.1), 0, 1);
+
+        if(hover && mouse_check_button_pressed(mb_left)) configurando_controle=i;
+
+        draw_set_color(merge_color(c_white,c_red,hover_prog_controles[i]));
+        draw_text_transformed(col_left, y_pos, key_to_string(global.teclas_controles[i]), esc_controles[i], esc_controles[i], 0);
+        draw_text_transformed(col_right, y_pos, controles[i][1], esc_controles[i], esc_controles[i], 0);
+
+        if(configurando_controle == i){
+            draw_set_color(c_yellow);
+            draw_text(_wgui/2, y_pos - 30, "Pressione uma tecla...");
+        }
+    }
+
+    var y_voltar = start_y + tam_controles*spacing + 20;
+    var hover_voltar = point_in_rectangle(_mx,_my,_wgui/2-60, y_voltar-10, _wgui/2+60, y_voltar+10);
+    draw_set_color(hover_voltar?c_red:c_white);
+    draw_text(_wgui/2, y_voltar, "Voltar");
+    if(hover_voltar && mouse_check_button_pressed(mb_left)) menu_atual="opcoes";
+}
+
+
+else if(menu_atual == "idioma"){
+    var total_height = array_length(global.idiomas)*(_hstr+10)-10;
+    var start_y = _hgui/2 - total_height/2;
+
+    for(var i=0;i<array_length(global.idiomas);i++){
+        var y_pos = start_y + i*(_hstr+10);
+        var hover = point_in_rectangle(_mx,_my,_wgui/2 - string_width(global.idiomas[i])/2 -10, y_pos-_hstr/2, _wgui/2 + string_width(global.idiomas[i])/2 +10, y_pos+_hstr/2);
+        esc_opcoes[i] = lerp(esc_opcoes[i], hover ? 1.4 : 1,0.15);
+        hover_prog_opcoes[i] = clamp(hover_prog_opcoes[i] + (hover?0.1:-0.1),0,1);
+
+        if(hover && mouse_check_button_pressed(mb_left)){
+            global.idioma = i;
+            menu_atual = "opcoes";
+        }
+
+        draw_set_color(merge_color(c_white,c_red,hover_prog_opcoes[i]));
+        draw_text_transformed(
+            _wgui/2,
+            y_pos,
+            global.idiomas[i],
+            esc_opcoes[i],
+            esc_opcoes[i],
+            0
+        );
+    }
+}
