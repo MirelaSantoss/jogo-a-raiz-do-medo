@@ -1,0 +1,77 @@
+//EVENTO CRIAR:
+textos = [
+    "Ele acordou em sua cama, mas tudo parecia diferente..", 
+	"As luzes piscavam, os moveis estavam quebrados",
+	"Nao havia ninguem por perto e tudo parecia abandonado",
+	"As portas estavam trancadas",
+	"E, para abri-las, ele precisa resolver problemas matematicos",
+	"...",
+    "Onde estou????",
+    "Essa nao parece minha casa!!",
+    "Esta tudo escuro e sujo...",
+    "COMO EU SAIO DAQUI???",
+	"Me ajude a encontrar a saida!!..."
+];
+
+
+texto_atual = 0;
+timer_texto = 0;
+tempo_troca = 190; 
+mostrar_texto = "";
+
+
+luz_alpha = 0;
+luz_timer = irandom_range(30, 90);
+
+fade_alpha = 1;
+
+//EVENTO ETAPA:
+//Atualiza o texto
+timer_texto++;
+if (timer_texto > tempo_troca && texto_atual < array_length(textos) - 1) {
+    texto_atual++;
+    timer_texto = 0;
+}
+
+var letras = floor(timer_texto / 3);
+mostrar_texto = string_copy(textos[texto_atual], 1, letras);
+
+
+luz_timer--;
+if (luz_timer <= 0) {
+    luz_alpha = irandom_range(0.3, 0.8); // brilho da luz
+    luz_timer = irandom_range(30, 90);   // tempo até o próximo flash
+} else {
+    luz_alpha = max(0, luz_alpha - 0.05);
+}
+
+
+if (texto_atual == array_length(textos) - 1 && timer_texto > tempo_troca + 60) {
+    room_goto(inicio_jogo); 
+}
+
+if (fade_alpha > 0) fade_alpha -= 0.01;
+
+//EVENTO DESENHAR GUI:
+draw_set_color(c_black);
+draw_set_alpha(0.5); 
+draw_rectangle(0, 0, display_get_gui_width(), display_get_gui_height(), false);
+
+//luz pisca
+draw_set_color(c_white);
+draw_set_alpha(luz_alpha);
+draw_rectangle(0, 0, display_get_gui_width(), display_get_gui_height(), false);
+
+//textoo
+draw_set_alpha(1);
+draw_set_color(c_white);
+draw_set_font(font_intro);
+draw_set_halign(fa_center);
+draw_set_valign(fa_middle);
+draw_text(display_get_gui_width()/2, display_get_gui_height()/2 + 100, mostrar_texto);
+
+//tela preta
+draw_set_color(c_black);
+draw_set_alpha(fade_alpha);
+draw_rectangle(0, 0, display_get_gui_width(), display_get_gui_height(), false);
+draw_set_alpha(1);
