@@ -1,0 +1,212 @@
+//EVENTO CRIAR:
+if (global.pause) exit;
+
+if (!variable_global_exists("folha_audio_tocada")) global.folha_audio_tocada = false;
+
+if (!global.folha_audio_tocada && audio_exists(audio_pagina)) {
+    audio_play_sound(audio_pagina, 1, false);
+    global.folha_audio_tocada = true;
+}
+
+// MATEMÁTICA - EXERCÍCIOS
+vidas = 3;
+questao_atual = 0;
+mostrar_resultado = false;
+resultado_texto = "";
+tempo_maximo = 1200;
+tempo_atual = tempo_maximo;
+
+questoes = [
+    {pergunta: "Resolva: 2x + 5 = 9", opcoes: ["x = 2", "x = 3", "x = 4"], correta: 0},
+    {pergunta: "Quanto e 3 elevado a 4?", opcoes: ["82", "81", "79"], correta: 1},
+    {pergunta: "Qual e a raiz de 144?", opcoes: ["10", "14", "12"], correta: 2}
+];
+
+
+painel_x = display_get_gui_width() / 2;
+painel_y = display_get_gui_height() / 2;
+botao_largura = 240;
+botao_altura = 36;
+botao_espaco = 14;
+game_over = false;
+mostrar_resultado = false
+problema_ativo =false;
+
+
+//EVENTO ETAPA:
+if (global.pause) exit;
+
+if (game_over) {
+  
+    if (alarm[0] == -1) {
+        alarm[0] = room_speed * 2;
+    }
+    exit;
+}
+
+
+
+//fecha folha com E ou ESC
+if (keyboard_check_pressed(ord("E")) || keyboard_check_pressed(vk_escape)) {
+    global.folha_aberta = false;
+    global.folha_audio_tocada = false;
+    instance_destroy();
+}
+
+
+
+if (!mostrar_resultado) {
+    tempo_atual -= 1;
+
+   if (tempo_atual <= 0) {
+    vidas -= 1;
+    tempo_atual = tempo_maximo;
+
+    if (vidas <= 0) {
+        game_over = true;
+        mostrar_resultado = false;
+    } else {
+        resultado_texto = "Tempo esgotado!";
+        mostrar_resultado = true;
+        alarm[0] = 90;
+    }
+}
+
+}
+
+if (mouse_check_button_pressed(mb_left) && !mostrar_resultado && !game_over) {
+    var mx = device_mouse_x_to_gui(0);
+    var my = device_mouse_y_to_gui(0);
+    var q = questoes[questao_atual];
+
+    for (var i = 0; i < array_length(questoes); i++) {
+        var bx1 = painel_x - botao_largura / 2;
+        var by1 = painel_y + 40 + (i * (botao_altura + botao_espaco));
+        var bx2 = bx1 + botao_largura;
+        var by2 = by1 + botao_altura;
+
+        if (point_in_rectangle(mx, my, bx1, by1, bx2, by2)) {
+            if (i == q.correta) {
+                resultado_texto = "Correto!";
+                questao_atual += 1;
+
+                if (questao_atual >= array_length(questoes)) {
+                    resultado_texto = "Todas respondidas!";
+					 room_goto(segundo_nivel);
+					questao_atual = 0;
+                }
+            }else {
+                resultado_texto = "Errado!";
+                vidas -= 1;
+                if (vidas <= 0) {
+                    game_over = true;
+                    mostrar_resultado = false;
+					 room_goto(menu);
+                }
+            }
+
+            mostrar_resultado = true;
+            alarm[0] = 90;
+            tempo_atual = tempo_maximo;
+			
+        }
+    }
+}
+
+//EVENTO DESENHAR GUI:
+draw_sprite_ext(sprite_index, 0, painel_x, painel_y, 1, 1, 0, c_white, 1);
+
+//pergunta atual
+var q = questoes[questao_atual];
+draw_set_color(c_black);
+draw_text(painel_x - 10, painel_y - 40, string(questao_atual + 1) + ") " + q.pergunta);
+
+//mbotões
+for (var i = 0; i < array_length(q.opcoes); i++) {
+    var bx1 = painel_x - botao_largura / 2;
+    var by1 = painel_y + 40 + (i * (botao_altura + botao_espaco));
+    var bx2 = bx1 + botao_largura;
+    var by2 = by1 + botao_altura;
+
+    //muda a cor quando o botão é pressionado
+    var mx = device_mouse_x_to_gui(0);
+    var my = device_mouse_y_to_gui(0);
+    if (point_in_rectangle(mx, my, bx1, by1, bx2, by2)) {
+        draw_set_color(make_color_rgb(200, 255, 200));
+    } else {
+        draw_set_color(c_white);
+    }
+
+    draw_rectangle(bx1, by1, bx2, by2, false);
+    draw_set_color(c_black);
+    draw_text(bx1 + 70, by1 + 11, string(i + 1) + ") " + q.opcoes[i]);
+}
+
+//tempo
+draw_set_color(c_red);
+draw_text(painel_x + 60, painel_y - 120, "Tempo: " + string(round(tempo_atual / 60)));
+
+for (var i = 0; i < vidas; i++) {
+    draw_sprite(spr_coracao, 0, painel_x - 100 + (i * 25), painel_y - 140);
+}
+
+if (mostrar_resultado) {
+    draw_set_color(c_white);
+	draw_set_font(font_intro)
+    draw_text(painel_x + 10, painel_y + 220, resultado_texto);
+}
+
+
+if (game_over) {
+    draw_set_color(c_red);
+    draw_set_halign(fa_center);
+    draw_set_valign(fa_middle);
+    
+    draw_text(display_get_gui_width() / 2, display_get_gui_height() / 2, "GAME OVER");
+}
+
+
+//EVENTO MOUSE ESQUERDA PRESSIONADA:
+if (mostrar_resultado) exit;
+
+var mx = mouse_x;
+var my = mouse_y;
+var q = questoes[questao_atual];
+
+//verifica o clique em cada botão
+for (var i = 0; i < array_length(q.opcoes); i++) {
+    var bx1 = x - 80;
+    var by1 = y + 50 + (i * 40);
+    var bx2 = x + 80;
+    var by2 = by1 + 30;
+
+    if (point_in_rectangle(mx, my, bx1, by1, bx2, by2)) {
+        var resposta = i;
+
+        if (resposta == q.correta) {
+            resultado_texto = "Correto!";
+            questao_atual += 1;
+
+            if (questao_atual >= array_length(questoes)) {
+                resultado_texto = "Todas respondidas!";
+                questao_atual = 0;
+            }
+        } else {
+            resultado_texto =  "Errado!";
+            vidas -= 1;
+            if (vidas <= 0) {
+                room_goto(inicio_jogo);
+            }
+        }
+
+        mostrar_resultado = true;
+        alarm[0] = 90;
+        tempo_atual = tempo_maximo;
+    }
+}
+
+//EVENTO ALARME [0]:
+mostrar_resultado = false;
+
+//EVENTO DESTRUIR:
+global.folha_aberta = false;
